@@ -6,7 +6,7 @@ description = "appi - appimage manager"
 repository = "https://github.com/alvaro17f/appi"
 license = "LGPL-3.0"
 edition = "2021"
-keywords = ["appi", "appimage", "rust", "manager", "tui", "github"]
+keywords = ["appi", "appimage", "manager", "tui", "github"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
