@@ -71,7 +71,7 @@ pub async fn update() -> Result<()> {
             pb.set_message(cformat!("<y>{} <c>- Checking for updates...", name));
 
             let appimage_version = Version::parse(version)?;
-            let latest_version = get_latest_version(&name.replace("_", "-"), creator).await?;
+            let latest_version = get_latest_version(&name.replace('_', "-"), creator).await?;
 
             if appimage_version < latest_version {
                 pb.finish_and_clear();

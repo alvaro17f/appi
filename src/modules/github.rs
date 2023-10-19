@@ -152,7 +152,14 @@ pub async fn github(repo_url: &str) -> Result<()> {
     let repo_parts: Vec<&str> = repo_url.split('/').collect();
     let owner = repo_parts[repo_parts.len() - 2].to_string();
     let repo = repo_parts[repo_parts.len() - 1].to_string();
-    let repo_name = repo.replace("-", "_");
+    let repo_name = repo.replace('-', "_");
+
+    let app_folder = format!("/home/{}/Applications/{}", get_user()?, repo_name);
+    let app_folder_path = std::path::Path::new(&app_folder);
+    if app_folder_path.exists() {
+        cprintln!("<c>{} <y>is already installed", repo_name);
+        return Ok(());
+    }
 
     let url = format!(
         "https://api.github.com/repos/{}/{}/releases/latest",
