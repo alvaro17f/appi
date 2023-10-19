@@ -149,6 +149,7 @@ fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
 }
 
 pub async fn github(repo_url: &str) -> Result<()> {
+    let repo_url = repo_url.trim_end_matches('/');
     let repo_parts: Vec<&str> = repo_url.split('/').collect();
     let owner = repo_parts[repo_parts.len() - 2].to_string();
     let repo = repo_parts[repo_parts.len() - 1].to_string();
