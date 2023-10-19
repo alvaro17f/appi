@@ -1,6 +1,7 @@
 use crate::utils::{macros::error, tools::get_user};
 use anyhow::{Ok, Result};
-use color_print::cprintln;
+use color_print::{cformat, cprintln};
+use indicatif::ProgressBar;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -9,6 +10,7 @@ use std::{
     os::unix::prelude::PermissionsExt,
     path::PathBuf,
     process::Command,
+    time::Duration,
 };
 use tokio::{
     fs::{create_dir_all, set_permissions, File},
@@ -80,13 +82,14 @@ fn extract_appimage(file_path: &str) -> Result<()> {
     Ok(())
 }
 
-fn integrate_appimage(file_path: &str, repo: &str) -> Result<()> {
+fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
     let desktop_applications_path = format!("/home/{}/.local/share/applications", get_user()?);
     let desktop_applications_path = std::path::Path::new(&desktop_applications_path);
 
     let appimage_path = std::path::PathBuf::from(file_path);
     let appimage_dir = appimage_path.parent().unwrap();
     let appimage_extracted_dir = appimage_dir.join("squashfs-root");
+    let exec_path = appimage_extracted_dir.join("AppRun");
 
     let mut entries = fs::read_dir(appimage_extracted_dir)?;
 
@@ -116,12 +119,12 @@ fn integrate_appimage(file_path: &str, repo: &str) -> Result<()> {
         .next()
         .ok_or_else(|| error!("No icon found"))?;
 
-    let desktop_file_name = format!("{}.desktop", repo);
+    let desktop_file_name = format!("{}.desktop", repo_name);
     let desktop_app_path = PathBuf::from(desktop_applications_path).join(desktop_file_name);
 
     fs::copy(desktop_file, desktop_app_path)?;
 
-    let desktop_file_name = format!("{}.desktop", repo);
+    let desktop_file_name = format!("{}.desktop", repo_name);
     let desktop_app_path = PathBuf::from(desktop_applications_path).join(desktop_file_name);
 
     let mut desktop_file_content = std::fs::read_to_string(&desktop_app_path)?;
@@ -131,7 +134,7 @@ fn integrate_appimage(file_path: &str, repo: &str) -> Result<()> {
             if line.starts_with("Icon=") {
                 format!("Icon={}", icon)
             } else if line.starts_with("Exec=") {
-                format!("Exec={} %U", file_path)
+                format!("Exec={} %U", exec_path.display())
             } else {
                 line.to_string()
             }
@@ -149,6 +152,7 @@ pub async fn github(repo_url: &str) -> Result<()> {
     let repo_parts: Vec<&str> = repo_url.split('/').collect();
     let owner = repo_parts[repo_parts.len() - 2].to_string();
     let repo = repo_parts[repo_parts.len() - 1].to_string();
+    let repo_name = repo.replace("-", "_");
 
     let url = format!(
         "https://api.github.com/repos/{}/{}/releases/latest",
@@ -160,20 +164,28 @@ pub async fn github(repo_url: &str) -> Result<()> {
     let file_path = format!(
         "/home/{}/Applications/{}/{}-{}-v{}.appimage",
         get_user()?,
-        repo,
-        repo,
+        repo_name,
+        repo_name,
         owner,
         version
     );
 
+    let pb = ProgressBar::new_spinner();
+    pb.enable_steady_tick(Duration::from_millis(120));
+    pb.set_message(cformat!("<c>Downloading {}...", repo_name));
     download_appimage(&appimage_url, &file_path).await?;
+    pb.finish_and_clear();
 
+    let pb = ProgressBar::new_spinner();
+    pb.enable_steady_tick(Duration::from_millis(120));
+    pb.set_message(cformat!("<c>Installing {}...", repo_name));
     extract_appimage(&file_path)?;
-    integrate_appimage(&file_path, &repo)?;
+    integrate_appimage(&file_path, &repo_name)?;
+    pb.finish_and_clear();
 
     cprintln!(
         "<g>Successfully installed <c>{}</c> <g>version <c>{}</c></g>",
-        repo,
+        repo_name,
         version
     );
     Ok(())
