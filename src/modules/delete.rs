@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 use anyhow::{Ok, Result};
 use color_print::{cformat, cprintln};
@@ -18,14 +18,9 @@ pub async fn delete() -> Result<()> {
             .unwrap()
             .to_string_lossy()
             .to_string()
-            .to_lowercase()
-            .replace(".appimage", "");
-        let parts: Vec<&str> = file_name.split('-').collect();
-        let name = parts[0];
-        let _creator = parts[1];
-        let version = parts[2];
-        let appimage = cformat!("<c,s>{}</> <y>{}", name, version);
-        installed.insert(appimage.clone(), path.clone());
+            .to_lowercase();
+
+        installed.insert(file_name.clone(), path.clone());
     }
 
     if installed.is_empty() {
@@ -42,9 +37,35 @@ pub async fn delete() -> Result<()> {
         .max_length(10)
         .items(&selections[..])
         .interact()?;
-    let selected_appimage = &selections[selection];
-    let file_path = installed.get(selected_appimage).unwrap();
+    let selected_app = &selections[selection];
 
-    fs::remove_file(file_path)?;
+    let app_folder = installed.get(selected_app).unwrap();
+
+    fs::remove_dir_all(app_folder)?;
+
+    let app_path = PathBuf::from(format!("/home/{}/.local/share/applications", get_user()?));
+
+    let matching_file = fs::read_dir(app_path)?
+        .filter_map(|entry| {
+            let path = entry.ok()?.path();
+            if path.is_file()
+                && path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .contains(selected_app)
+            {
+                Some(path)
+            } else {
+                None
+            }
+        })
+        .next();
+
+    if let Some(path) = matching_file {
+        fs::remove_file(path)?;
+    } else {
+        eprintln!("No matching file found for {}", selected_app);
+    }
     Ok(())
 }
