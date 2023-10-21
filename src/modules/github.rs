@@ -1,5 +1,5 @@
 use crate::utils::{macros::error, tools::get_user};
-use anyhow::{Ok, Result};
+use anyhow::{Context, Ok, Result};
 use color_print::{cformat, cprintln};
 use indicatif::ProgressBar;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
@@ -54,8 +54,12 @@ async fn get_response(url: &str) -> Result<(String, String)> {
     let asset = assets
         .iter()
         .find(|a| a.name.as_ref().unwrap().ends_with(".AppImage"))
-        .unwrap();
-    let appimage_url = asset.browser_download_url.as_ref().unwrap().to_string();
+        .context(error!("No AppImage found"))?;
+    let appimage_url = asset
+        .browser_download_url
+        .as_ref()
+        .context(error!("No URL to AppImage found"))?
+        .to_string();
 
     Ok((appimage_url, version))
 }

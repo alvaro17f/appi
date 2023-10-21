@@ -12,7 +12,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use color_print::cprintln;
-use modules::{delete::delete, github::github, update::update};
+use modules::{delete::delete, github::github, search::search, update::update};
 use std::process::exit;
 
 #[derive(Parser, Debug, PartialEq)]
@@ -28,9 +28,13 @@ struct Cli {
 
 #[derive(Subcommand, Debug, PartialEq)]
 enum Commands {
+    /// Search & install an AppImage from GitHub
+    #[clap(short_flag = 's')]
+    Search { query: String },
+
     /// Install an AppImage from GitHub user/repo
-    #[clap(short_flag = 'i')]
-    Install { repo_url: String },
+    #[clap(short_flag = 'g')]
+    Github { repo_url: String },
 
     /// Update all installed AppImages
     #[clap(short_flag = 'u')]
@@ -56,7 +60,11 @@ async fn main() -> Result<()> {
         }
     }
     match &cli.commands {
-        Some(Commands::Install { repo_url }) => {
+        Some(Commands::Search { query }) => {
+            clear()?;
+            search(query).await?;
+        }
+        Some(Commands::Github { repo_url }) => {
             clear()?;
             github(repo_url).await?;
         }
