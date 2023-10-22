@@ -29,7 +29,8 @@ pub async fn delete() -> Result<()> {
         return Ok(());
     }
 
-    let selections: Vec<String> = installed.keys().cloned().collect();
+    let mut selections: Vec<String> = installed.keys().cloned().collect();
+    selections.sort();
 
     let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt(cformat!("<y>select an appimage to remove?"))

@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, io};
 
 use anyhow::{Ok, Result};
 use color_print::cprintln;
@@ -8,9 +8,13 @@ use crate::utils::tools::get_user;
 pub async fn list() -> Result<()> {
     cprintln!("<g,s>APPI</> - <y>AppImage Installer</>\n");
     let base_path = format!("/home/{}/Applications", get_user()?);
-    let repo_entries = fs::read_dir(&base_path)?;
+    let mut repo_entries = fs::read_dir(&base_path)?
+        .map(|res| res.map(|e| e.path()))
+        .collect::<Result<Vec<_>, io::Error>>()?;
+    repo_entries.sort();
+
     for repo_entry in repo_entries {
-        let repo_path = repo_entry?.path();
+        let repo_path = repo_entry;
         if !repo_path.is_dir() {
             continue;
         }

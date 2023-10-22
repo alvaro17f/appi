@@ -32,11 +32,6 @@ impl Request {
     }
 }
 
-async fn get_repo_url(search_url: &str) -> Result<Request> {
-    let response = Request::get(search_url).await?;
-    Ok(response)
-}
-
 pub async fn get_appimage_url(package_name: &str) -> Result<String> {
     let body = reqwest::get(format!(
         "https://aur.archlinux.org/packages/{}/",
@@ -95,7 +90,7 @@ pub async fn aur_search(query: &str) -> Result<()> {
     pb.enable_steady_tick(Duration::from_millis(120));
     pb.set_message(cformat!("<c>Searching <c>{}...", query));
 
-    let response = get_repo_url(&search_url).await?;
+    let response = Request::get(&search_url).await?;
 
     pb.finish_and_clear();
 
@@ -121,7 +116,7 @@ pub async fn aur_search(query: &str) -> Result<()> {
                         if let (Some(Name), Some(Version)) =
                             (x.Name.as_deref(), x.Version.as_deref())
                         {
-                            Some(cformat!("{}: <y>{}", Name, Version))
+                            Some(cformat!("{}: <y>{}", Name, Version.split('-').next()?))
                         } else {
                             None
                         }

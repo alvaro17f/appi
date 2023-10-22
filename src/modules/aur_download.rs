@@ -9,7 +9,7 @@ use indicatif::ProgressBar;
 use std::time::Duration;
 
 pub async fn aur_download(appimage_url: &str, name: &str) -> Result<()> {
-    let version = get_latest_aur(&name).await?;
+    let version = get_latest_aur(name).await?;
     let name = name.replace('-', "_");
 
     let app_folder = format!("/home/{}/Applications/{}", get_user()?, name);
