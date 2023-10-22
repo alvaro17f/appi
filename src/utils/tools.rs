@@ -1,5 +1,6 @@
 use anyhow::Result;
-use std::{env, process::Command};
+use std::env;
+use std::process::Command;
 
 pub fn clear() -> Result<()> {
     Command::new("clear");
