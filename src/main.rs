@@ -21,7 +21,6 @@ use modules::{
     update::update,
 };
 use std::process::exit;
-use utils::get_latest_version::get_latest_aur;
 
 #[derive(Parser, Debug, PartialEq)]
 #[command(author, version, about, long_about = None)]
@@ -96,8 +95,7 @@ async fn main() -> Result<()> {
             } else if aur.is_some() {
                 let name = &aur.as_ref().unwrap();
                 let appimage_url = get_appimage_url(name).await?;
-                let version = get_latest_aur(name).await?.to_string();
-                aur_download(&appimage_url, name, &version).await?;
+                aur_download(&appimage_url, name).await?;
                 exit(0)
             } else {
                 cprintln!("<r>Missing arguments</r>");

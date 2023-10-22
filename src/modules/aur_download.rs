@@ -1,5 +1,6 @@
 use crate::utils::{
     appimage_tools::{download_appimage, extract_appimage, integrate_appimage},
+    get_latest_version::get_latest_aur,
     tools::get_user,
 };
 use anyhow::{Ok, Result};
@@ -7,7 +8,8 @@ use color_print::{cformat, cprintln};
 use indicatif::ProgressBar;
 use std::time::Duration;
 
-pub async fn aur_download(appimage_url: &str, name: &str, version: &str) -> Result<()> {
+pub async fn aur_download(appimage_url: &str, name: &str) -> Result<()> {
+    let version = get_latest_aur(&name).await?;
     let name = name.replace('-', "_");
 
     let app_folder = format!("/home/{}/Applications/{}", get_user()?, name);

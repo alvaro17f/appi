@@ -63,7 +63,7 @@ pub async fn update() -> Result<()> {
                 if creator.to_lowercase() == "aur" {
                     let name = &name.replace('_', "-");
                     let appimage_url = get_appimage_url(name).await?;
-                    aur_download(&appimage_url, name, latest_version.to_string().as_str()).await?;
+                    aur_download(&appimage_url, name).await?;
                 } else {
                     let name = &name.replace('_', "-");
                     let url = &format!("{}/{}", &creator, &name);

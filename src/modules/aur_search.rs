@@ -13,7 +13,7 @@ struct Request {
     results: Option<Vec<Results>>,
 }
 
-#[allow(non_snake_case)] // Disable the warning for this struct
+#[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Results {
     Name: Option<String>,
@@ -46,17 +46,14 @@ pub async fn get_appimage_url(package_name: &str) -> Result<String> {
     .text()
     .await?;
 
-    // Parse the document
     let document = Html::parse_document(&body);
 
-    // Define the CSS selector
     let selector = Selector::parse("a").unwrap();
 
     let mut appimage_url: String = String::new();
     for element in document.select(&selector) {
         let a_link = element.value().attr("href").unwrap();
         let a_text = element.text().collect::<String>();
-        // Check if the anchor text contains "appimage"
         if a_text.to_lowercase().ends_with(".appimage") {
             appimage_url = a_link.to_string();
         }
@@ -73,15 +70,12 @@ async fn check_appimage(package_name: &str) -> Result<bool> {
     .text()
     .await?;
 
-    // Parse the document
     let document = Html::parse_document(&body);
 
-    // Define the CSS selector
     let selector = Selector::parse("a").unwrap();
 
     for element in document.select(&selector) {
         let a_text = element.text().collect::<String>();
-        // Check if the anchor text contains "appimage"
         if a_text.to_lowercase().ends_with(".appimage") {
             return Ok(true);
         }
@@ -172,20 +166,9 @@ pub async fn aur_search(query: &str) -> Result<()> {
                     .ok_or(error!("Failed to split selection"))
                     .unwrap()
                     .trim();
-                let version = &selection_appimages[selection]
-                    .splitn(2, "[33m")
-                    .last()
-                    .ok_or(error!("Failed to split selection"))
-                    .unwrap()
-                    .trim()
-                    .trim_end_matches("[39m")
-                    .split('-')
-                    .next()
-                    .ok_or_else(|| error!("Failed to split version"))?
-                    .to_string();
 
                 let appimage_url = get_appimage_url(name).await?;
-                aur_download(&appimage_url, name, version).await?;
+                aur_download(&appimage_url, name).await?;
                 Ok(())
             }
         },

@@ -9,7 +9,7 @@ struct AurRequest {
     results: Option<Vec<AurRelease>>,
 }
 
-#[allow(non_snake_case)] // Disable the warning for this struct
+#[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct AurRelease {
     Name: Option<String>,
