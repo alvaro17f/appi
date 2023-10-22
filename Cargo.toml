@@ -1,6 +1,6 @@
 [package]
 name = "appi"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["alvaro17f"]
 description = "appi - appimage manager"
 repository = "https://github.com/alvaro17f/appi"
@@ -19,7 +19,9 @@ dialoguer = "0.11.0"
 image = "0.24.7"
 indicatif = "0.17.6"
 openssl = { version = "0.10.40", features = ["vendored"] }
+regex = "1.10.2"
 reqwest = { version = "0.11", features = ["json"] }
+scraper = "0.17.1"
 semver = "1.0.20"
 serde = { version = "1.0.188", features = ["derive"] }
 sudo = "0.6.0"

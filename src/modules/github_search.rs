@@ -1,4 +1,4 @@
-use crate::{modules::github::github, utils::macros::error};
+use crate::{modules::github_download::github_download, utils::macros::error};
 use anyhow::{Ok, Result};
 use color_print::cformat;
 use dialoguer::{theme::ColorfulTheme, Select};
@@ -38,12 +38,7 @@ impl Request {
     }
 }
 
-async fn get_repo_url(search_url: &str) -> Result<Request> {
-    let response = Request::get(search_url).await?;
-    Ok(response)
-}
-
-pub async fn search(query: &str) -> Result<()> {
+pub async fn github_search(query: &str) -> Result<()> {
     let query = query.trim();
 
     let search_url = format!("https://api.github.com/search/repositories?q={}", query);
@@ -51,14 +46,15 @@ pub async fn search(query: &str) -> Result<()> {
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
     pb.set_message(cformat!("<c>Searching <c>{}...", query));
-    let response = get_repo_url(&search_url).await?;
+
+    let response = Request::get(&search_url).await?;
 
     pb.finish_and_clear();
 
     let result = match response.items {
         Some(items) => match items.len() {
             0 => Err(error!("No results")),
-            1 => Ok(github(items[0].full_name.as_deref().unwrap()).await?),
+            1 => Ok(github_download(items[0].full_name.as_deref().unwrap()).await?),
             _ => {
                 let selections: Vec<String> = items
                     .iter()
@@ -80,7 +76,7 @@ pub async fn search(query: &str) -> Result<()> {
                     .items(&selections[..])
                     .interact()?;
 
-                Ok(github(
+                Ok(github_download(
                     selections[selection]
                         .split(':')
                         .next()

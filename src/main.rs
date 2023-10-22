@@ -12,7 +12,14 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use color_print::cprintln;
-use modules::{delete::delete, github::github, search::search, update::update};
+use modules::{
+    aur_download::aur_download,
+    aur_search::{aur_search, get_appimage_url},
+    delete::delete,
+    github_download::github_download,
+    github_search::github_search,
+    update::{get_latest_version_aur, update},
+};
 use std::process::exit;
 
 #[derive(Parser, Debug, PartialEq)]
@@ -30,12 +37,19 @@ struct Cli {
 enum Commands {
     /// Search & install an AppImage from GitHub
     #[clap(short_flag = 's')]
-    Search { query: String },
+    Search {
+        aur: Option<String>,
+        #[arg(short = 'g', long = "github")]
+        github: Option<String>,
+    },
 
     /// Install an AppImage from GitHub user/repo
-    #[clap(short_flag = 'g')]
-    Github { repo_url: String },
-
+    #[clap(short_flag = 'i')]
+    Install {
+        aur: Option<String>,
+        #[arg(short = 'g', long = "github")]
+        github: Option<String>,
+    },
     /// Update all installed AppImages
     #[clap(short_flag = 'u')]
     Update,
@@ -60,13 +74,34 @@ async fn main() -> Result<()> {
         }
     }
     match &cli.commands {
-        Some(Commands::Search { query }) => {
+        Some(Commands::Search { aur, github }) => {
             clear()?;
-            search(query).await?;
+            if github.is_some() {
+                github_search(github.as_ref().unwrap()).await?;
+                exit(0)
+            } else if aur.is_some() {
+                aur_search(aur.as_ref().unwrap()).await?;
+                exit(0)
+            } else {
+                cprintln!("<r>Missing arguments</r>");
+                exit(1)
+            }
         }
-        Some(Commands::Github { repo_url }) => {
+        Some(Commands::Install { aur, github }) => {
             clear()?;
-            github(repo_url).await?;
+            if github.is_some() {
+                github_download(github.as_ref().unwrap()).await?;
+                exit(0)
+            } else if aur.is_some() {
+                let name = &aur.as_ref().unwrap();
+                let appimage_url = get_appimage_url(name).await?;
+                let version = get_latest_version_aur(name).await?.to_string();
+                aur_download(&appimage_url, name, &version).await?;
+                exit(0)
+            } else {
+                cprintln!("<r>Missing arguments</r>");
+                exit(1)
+            }
         }
         Some(Commands::Update) => {
             clear()?;
