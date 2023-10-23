@@ -49,7 +49,7 @@ pub fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
     let appimage_extracted_dir = appimage_dir.join("squashfs-root");
     let exec_path = appimage_extracted_dir.join("AppRun");
 
-    let mut entries = fs::read_dir(appimage_extracted_dir)?;
+    let mut entries = appimage_extracted_dir.read_dir()?;
 
     let desktop_file = entries
         .borrow_mut()
@@ -64,18 +64,26 @@ pub fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
         .next()
         .ok_or_else(|| error!("No desktop file found"))?;
 
-    let icon = entries
-        .borrow_mut()
-        .filter_map(|entry| {
-            let path = entry.ok()?.path();
-            if path.is_file() && image::ImageFormat::from_path(&path).is_ok() {
-                Some(path.to_string_lossy().to_string())
-            } else {
-                None
+    let icon_extensions = ["svg", "png", "jpg", "jpeg", "bmp", "ico", "webp"];
+    let mut icon = "None".to_string();
+    while let Some(entry) = entries.borrow_mut().next() {
+        let path = entry.as_ref().unwrap().path();
+        if path.is_file() {
+            let extension = path
+                .extension()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_lowercase();
+            if icon_extensions.iter().any(|&ext| ext == extension) {
+                icon = path.to_string_lossy().to_string();
+                break;
             }
-        })
-        .next()
-        .ok_or_else(|| error!("No icon found"))?;
+        }
+    }
+
+    if icon == "None" {
+        return Err(error!("No icon found"));
+    }
 
     let desktop_file_name = format!("{}.desktop", repo_name);
     let desktop_app_path = PathBuf::from(desktop_applications_path).join(desktop_file_name);

@@ -52,7 +52,8 @@ pub async fn update() -> Result<()> {
             if creator.to_lowercase() == "aur" {
                 latest_version = get_latest_aur(&name.replace('_', "-")).await?;
             } else {
-                latest_version = get_latest_github(&name.replace('_', "-"), creator).await?;
+                latest_version =
+                    get_latest_github(&name.replace('_', "-"), &creator.replace('_', "-")).await?;
             };
 
             if appimage_version < latest_version {
@@ -66,6 +67,7 @@ pub async fn update() -> Result<()> {
                     aur_download(&appimage_url, name).await?;
                 } else {
                     let name = &name.replace('_', "-");
+                    let creator = &creator.replace('_', "-");
                     let url = &format!("{}/{}", &creator, &name);
                     github_download(url).await?;
                 }

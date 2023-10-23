@@ -1,7 +1,6 @@
-use std::{fs, io};
-
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use color_print::cprintln;
+use std::{fs, io};
 
 use crate::utils::tools::get_user;
 

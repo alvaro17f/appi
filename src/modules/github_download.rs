@@ -1,6 +1,7 @@
 use crate::utils::{
     appimage_tools::{download_appimage, extract_appimage, integrate_appimage},
     macros::error,
+    rate_limit::check_github_rate_limit,
     tools::get_user,
 };
 use anyhow::{Context, Ok, Result};
@@ -37,7 +38,7 @@ impl Request {
 async fn get_response(url: &str) -> Result<(String, String)> {
     let response = Request::get(url).await?;
 
-    let version = response.tag_name.unwrap();
+    let version = response.tag_name.context(error!("No version found"))?;
     let version = version
         .chars()
         .filter(|c| c.is_ascii_digit() || *c == '.')
@@ -58,10 +59,12 @@ async fn get_response(url: &str) -> Result<(String, String)> {
 }
 
 pub async fn github_download(repo_url: &str) -> Result<()> {
+    check_github_rate_limit().await?;
     let repo_url = repo_url.trim_end_matches('/');
     let repo_parts: Vec<&str> = repo_url.split('/').collect();
     let owner = repo_parts[repo_parts.len() - 2].to_string();
     let repo = repo_parts[repo_parts.len() - 1].to_string();
+    let owner_name = owner.replace('-', "_");
     let repo_name = repo.replace('-', "_");
 
     let app_folder = format!("/home/{}/Applications/{}", get_user()?, repo_name);
@@ -83,7 +86,7 @@ pub async fn github_download(repo_url: &str) -> Result<()> {
         get_user()?,
         repo_name,
         repo_name,
-        owner,
+        owner_name,
         version
     );
 

@@ -1,7 +1,10 @@
-use crate::{modules::aur_download::aur_download, utils::macros::error};
+use crate::{
+    modules::{aur_download::aur_download, github_search::github_search},
+    utils::macros::error,
+};
 use anyhow::{Ok, Result};
-use color_print::cformat;
-use dialoguer::{theme::ColorfulTheme, Select};
+use color_print::{cformat, cprintln};
+use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use indicatif::ProgressBar;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use scraper::{Html, Selector};
@@ -88,14 +91,25 @@ pub async fn aur_search(query: &str) -> Result<()> {
 
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
-    pb.set_message(cformat!("<c>Searching <c>{}...", query));
+    pb.set_message(cformat!("<y>Searching <c>{}<y>...", query));
 
     let response = Request::get(&search_url).await?;
 
     #[allow(non_snake_case)]
     let _ = match response.results {
         Some(items) => match items.len() {
-            0 => Err(error!("No results")),
+            0 => {
+                pb.finish_and_clear();
+                cprintln!("<r>No results found.");
+                if Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt(cformat!("<y>do you want to try on github?"))
+                    .default(true)
+                    .interact()?
+                {
+                    github_search(query).await?;
+                }
+                Ok(())
+            }
             _ => {
                 let mut items = items;
                 items.sort_by(|a, b| {
@@ -139,7 +153,16 @@ pub async fn aur_search(query: &str) -> Result<()> {
                 pb.finish_and_clear();
 
                 if selection_appimages.is_empty() {
-                    Err(error!("No results found. Try to be more precise."))?;
+                    cprintln!("<r>No results found.");
+                    if Confirm::with_theme(&ColorfulTheme::default())
+                        .with_prompt(cformat!("<y>do you want to try on github?"))
+                        .default(true)
+                        .interact()?
+                    {
+                        github_search(query).await?;
+                    } else {
+                        return Ok(());
+                    };
                 }
 
                 let selection = Select::with_theme(&ColorfulTheme::default())

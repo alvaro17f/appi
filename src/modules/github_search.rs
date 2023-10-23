@@ -1,4 +1,7 @@
-use crate::{modules::github_download::github_download, utils::macros::error};
+use crate::{
+    modules::github_download::github_download,
+    utils::{macros::error, rate_limit::check_github_rate_limit},
+};
 use anyhow::Result;
 use color_print::{cformat, cprintln};
 use dialoguer::{theme::ColorfulTheme, Select};
@@ -57,8 +60,7 @@ async fn check_appimage(full_name: &str) -> Result<bool> {
     };
     if assets
         .iter()
-        .find(|a| a.name.as_ref().unwrap().ends_with(".AppImage"))
-        .is_some()
+        .any(|a| a.name.as_ref().unwrap().ends_with(".AppImage"))
     {
         return Ok(true);
     }
@@ -67,13 +69,14 @@ async fn check_appimage(full_name: &str) -> Result<bool> {
 }
 
 pub async fn github_search(query: &str) -> Result<()> {
+    check_github_rate_limit().await?;
     let query = query.trim();
 
     let search_url = format!("https://api.github.com/search/repositories?q={}", query);
 
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
-    pb.set_message(cformat!("<c>Searching <c>{}...", query));
+    pb.set_message(cformat!("<y>Searching <c>{} <y>on <r>github<y>...", query));
 
     let response = Request::get(&search_url).await?;
 
@@ -141,5 +144,5 @@ pub async fn github_search(query: &str) -> Result<()> {
         None => Err(error!("No results")),
     };
 
-    Ok(result?)
+    result
 }

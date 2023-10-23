@@ -38,7 +38,7 @@ enum Commands {
     /// Search & install an AppImage
     #[clap(short_flag = 's')]
     Search {
-        arg: Option<String>,
+        args: Option<String>,
         #[arg(short = 'g', long = "github")]
         github: bool,
     },
@@ -46,7 +46,7 @@ enum Commands {
     /// Install an AppImage
     #[clap(short_flag = 'i')]
     Install {
-        arg: Option<String>,
+        args: Option<String>,
         #[arg(short = 'g', long = "github")]
         github: bool,
     },
@@ -74,26 +74,26 @@ async fn main() -> Result<()> {
         }
     }
     match &cli.commands {
-        Some(Commands::Search { arg, github }) => {
+        Some(Commands::Search { args, github }) => {
             clear()?;
             if *github {
-                github_search(arg.as_ref().unwrap()).await?;
+                github_search(args.as_ref().unwrap()).await?;
                 exit(0)
-            } else if arg.is_some() {
-                aur_search(arg.as_ref().unwrap()).await?;
+            } else if args.is_some() {
+                aur_search(args.as_ref().unwrap()).await?;
                 exit(0)
             } else {
                 cprintln!("<r>Missing arguments</r>");
                 exit(1)
             }
         }
-        Some(Commands::Install { arg, github }) => {
+        Some(Commands::Install { args, github }) => {
             clear()?;
             if *github {
-                github_download(arg.as_ref().unwrap()).await?;
+                github_download(args.as_ref().unwrap()).await?;
                 exit(0)
-            } else if arg.is_some() {
-                let name = &arg.as_ref().unwrap();
+            } else if args.is_some() {
+                let name = &args.as_ref().unwrap();
                 let appimage_url = get_appimage_url(name).await?;
                 aur_download(&appimage_url, name).await?;
                 exit(0)

@@ -1,6 +1,6 @@
 [package]
 name = "appi"
-version = "0.6.5"
+version = "0.6.9"
 authors = ["alvaro17f"]
 description = "appi - appimage manager"
 repository = "https://github.com/alvaro17f/appi"
@@ -12,11 +12,11 @@ keywords = ["appi", "appimage", "manager", "tui", "github"]
 
 [dependencies]
 anyhow = "1.0.75"
+chrono = "0.4.31"
 clap = { version = "4.4.6", features = ["derive"] }
 clap_complete = "4.4.1"
 color-print = "0.3.5"
 dialoguer = "0.11.0"
-image = "0.24.7"
 indicatif = "0.17.6"
 openssl = { version = "0.10.40", features = ["vendored"] }
 regex = "1.10.2"
