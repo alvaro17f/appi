@@ -47,7 +47,17 @@ async fn get_response(url: &str) -> Result<(String, String)> {
     let assets = response.assets.unwrap();
     let asset = assets
         .iter()
-        .find(|a| a.name.as_ref().unwrap().ends_with(".AppImage"))
+        .find(|a| {
+            a.name
+                .as_ref()
+                .map(|name| !name.to_lowercase().contains("arm64"))
+                .unwrap_or(false)
+                && a.name
+                    .as_ref()
+                    .unwrap()
+                    .to_lowercase()
+                    .ends_with(".appimage")
+        })
         .context(error!("No AppImage found"))?;
     let appimage_url = asset
         .browser_download_url
