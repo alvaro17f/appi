@@ -16,7 +16,7 @@ pub async fn download_appimage(url: &str, file_path: &str) -> Result<()> {
 
     if !response.status().is_success() {
         return Err(error!(
-            "Failed to download file. Check if the package is available."
+            "Failed to download file. Check if the package is available"
         ));
     }
 

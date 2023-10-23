@@ -1,10 +1,8 @@
-use std::{collections::HashMap, fs, path::PathBuf};
-
-use anyhow::{Ok, Result};
+use crate::utils::{macros::error, tools::get_user};
+use anyhow::{Context, Result};
 use color_print::{cformat, cprintln};
 use dialoguer::{theme::ColorfulTheme, Select};
-
-use crate::utils::tools::get_user;
+use std::{collections::HashMap, fs, path::PathBuf};
 
 pub async fn delete() -> Result<()> {
     cprintln!("<g,s>##################################");
@@ -27,8 +25,6 @@ pub async fn delete() -> Result<()> {
 
     if installed.is_empty() {
         cprintln!("<r>No appimages installed</>");
-        println!();
-        return Ok(());
     }
 
     let mut selections: Vec<String> = installed.keys().cloned().collect();
@@ -39,9 +35,10 @@ pub async fn delete() -> Result<()> {
         .default(0)
         .max_length(10)
         .items(&selections[..])
-        .interact()?;
-    let selected_app = &selections[selection];
+        .interact()
+        .context(error!("No appimage to remove"))?;
 
+    let selected_app = &selections[selection];
     let app_folder = installed.get(selected_app).unwrap();
 
     fs::remove_dir_all(app_folder)?;

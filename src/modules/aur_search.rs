@@ -2,14 +2,14 @@ use crate::{
     modules::{aur_download::aur_download, github_search::github_search},
     utils::macros::error,
 };
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use color_print::{cformat, cprintln};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use indicatif::ProgressBar;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use std::{cmp::Ordering, time::Duration};
+use std::{cmp::Ordering, process::exit, time::Duration};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Request {
@@ -100,7 +100,7 @@ pub async fn aur_search(query: &str) -> Result<()> {
         Some(items) => match items.len() {
             0 => {
                 pb.finish_and_clear();
-                cprintln!("<r>No results found.");
+                cprintln!("<r>No results found");
                 if Confirm::with_theme(&ColorfulTheme::default())
                     .with_prompt(cformat!("<y>do you want to try on github?"))
                     .default(true)
@@ -153,15 +153,15 @@ pub async fn aur_search(query: &str) -> Result<()> {
                 pb.finish_and_clear();
 
                 if selection_appimages.is_empty() {
-                    cprintln!("<r>No results found.");
+                    cprintln!("<r>No results found");
                     if Confirm::with_theme(&ColorfulTheme::default())
                         .with_prompt(cformat!("<y>do you want to try on github?"))
                         .default(true)
                         .interact()?
                     {
-                        github_search(query).await?;
+                        github_search(query).await?
                     } else {
-                        return Ok(());
+                        exit(0)
                     };
                 }
 
@@ -170,17 +170,20 @@ pub async fn aur_search(query: &str) -> Result<()> {
                     .default(0)
                     .max_length(10)
                     .items(&selection_appimages[..])
-                    .interact()?;
+                    .interact()
+                    .ok();
 
-                let name = &selection_appimages[selection]
-                    .split(':')
-                    .next()
-                    .ok_or(error!("Failed to split selection"))
-                    .unwrap()
-                    .trim();
+                if let Some(selection) = selection {
+                    let name = &selection_appimages[selection]
+                        .split(':')
+                        .next()
+                        .ok_or(error!("Failed to split selection"))
+                        .unwrap()
+                        .trim();
 
-                let appimage_url = get_appimage_url(name).await?;
-                aur_download(&appimage_url, name).await?;
+                    let appimage_url = get_appimage_url(name).await?;
+                    aur_download(&appimage_url, name).await?
+                };
                 Ok(())
             }
         },

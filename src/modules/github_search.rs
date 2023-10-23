@@ -120,7 +120,6 @@ pub async fn github_search(query: &str) -> Result<()> {
 
                 if selection_appimages.is_empty() {
                     cprintln!("<r>No repositories found with AppImages</>");
-                    return Ok(());
                 }
 
                 let selection = Select::with_theme(&ColorfulTheme::default())
@@ -128,17 +127,22 @@ pub async fn github_search(query: &str) -> Result<()> {
                     .default(0)
                     .max_length(10)
                     .items(&selection_appimages[..])
-                    .interact()?;
+                    .interact()
+                    .ok();
 
-                Ok(github_download(
-                    selection_appimages[selection]
-                        .split(':')
-                        .next()
-                        .ok_or(error!("Failed to split selection"))
-                        .unwrap()
-                        .trim(),
-                )
-                .await?)
+                if let Some(selection) = selection {
+                    github_download(
+                        selection_appimages[selection]
+                            .split(':')
+                            .next()
+                            .ok_or(error!("Failed to split selection"))
+                            .unwrap()
+                            .trim(),
+                    )
+                    .await?
+                }
+
+                Ok(())
             }
         },
         None => Err(error!("No results")),

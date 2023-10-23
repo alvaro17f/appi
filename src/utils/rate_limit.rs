@@ -40,7 +40,7 @@ pub async fn check_github_rate_limit() -> Result<()> {
         let remaining_time = reset_time.signed_duration_since(Utc::now());
         let remaining_minutes = remaining_time.num_minutes();
         return Err(error!(format!(
-            "Github rate limit exceeded. Wait for {} min and try again.",
+            "Github rate limit exceeded. Wait for {} min and try again",
             remaining_minutes
         )));
     }
