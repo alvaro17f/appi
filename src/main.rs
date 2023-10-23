@@ -35,20 +35,20 @@ struct Cli {
 
 #[derive(Subcommand, Debug, PartialEq)]
 enum Commands {
-    /// Search & install an AppImage from GitHub
+    /// Search & install an AppImage
     #[clap(short_flag = 's')]
     Search {
-        aur: Option<String>,
+        arg: Option<String>,
         #[arg(short = 'g', long = "github")]
-        github: Option<String>,
+        github: bool,
     },
 
-    /// Install an AppImage from GitHub user/repo
+    /// Install an AppImage
     #[clap(short_flag = 'i')]
     Install {
-        aur: Option<String>,
+        arg: Option<String>,
         #[arg(short = 'g', long = "github")]
-        github: Option<String>,
+        github: bool,
     },
     /// Update all installed AppImages
     #[clap(short_flag = 'u')]
@@ -74,26 +74,26 @@ async fn main() -> Result<()> {
         }
     }
     match &cli.commands {
-        Some(Commands::Search { aur, github }) => {
+        Some(Commands::Search { arg, github }) => {
             clear()?;
-            if github.is_some() {
-                github_search(github.as_ref().unwrap()).await?;
+            if *github {
+                github_search(arg.as_ref().unwrap()).await?;
                 exit(0)
-            } else if aur.is_some() {
-                aur_search(aur.as_ref().unwrap()).await?;
+            } else if arg.is_some() {
+                aur_search(arg.as_ref().unwrap()).await?;
                 exit(0)
             } else {
                 cprintln!("<r>Missing arguments</r>");
                 exit(1)
             }
         }
-        Some(Commands::Install { aur, github }) => {
+        Some(Commands::Install { arg, github }) => {
             clear()?;
-            if github.is_some() {
-                github_download(github.as_ref().unwrap()).await?;
+            if *github {
+                github_download(arg.as_ref().unwrap()).await?;
                 exit(0)
-            } else if aur.is_some() {
-                let name = &aur.as_ref().unwrap();
+            } else if arg.is_some() {
+                let name = &arg.as_ref().unwrap();
                 let appimage_url = get_appimage_url(name).await?;
                 aur_download(&appimage_url, name).await?;
                 exit(0)
