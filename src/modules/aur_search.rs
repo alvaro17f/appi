@@ -92,17 +92,11 @@ pub async fn aur_search(query: &str) -> Result<()> {
 
     let response = Request::get(&search_url).await?;
 
-    pb.finish_and_clear();
-
     #[allow(non_snake_case)]
     let _ = match response.results {
         Some(items) => match items.len() {
             0 => Err(error!("No results")),
             _ => {
-                let pb = ProgressBar::new_spinner();
-                pb.enable_steady_tick(Duration::from_millis(120));
-                pb.set_message(cformat!("<c>Searching <c>{}...", query));
-
                 let mut items = items;
                 items.sort_by(|a, b| {
                     b.Popularity
