@@ -5,7 +5,9 @@ use std::{fs, io};
 use crate::utils::tools::get_user;
 
 pub async fn list() -> Result<()> {
-    cprintln!("<g,s>APPI</> - <y>AppImage Installer</>\n");
+    cprintln!("<g,s>##################################");
+    cprintln!("<g,s>~> APPI</> - <y>AppImage Installer</>");
+    cprintln!("<g,s>##################################");
     let base_path = format!("/home/{}/Applications", get_user()?);
     let mut repo_entries = fs::read_dir(&base_path)?
         .map(|res| res.map(|e| e.path()))

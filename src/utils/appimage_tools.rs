@@ -1,7 +1,6 @@
 use crate::utils::{macros::error, tools::get_user};
 use anyhow::Result;
 use std::{
-    borrow::BorrowMut,
     fs::{self, Permissions},
     os::unix::prelude::PermissionsExt,
     path::PathBuf,
@@ -40,7 +39,7 @@ pub fn extract_appimage(file_path: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
+pub fn integrate_appimage(file_path: &str, name: &str) -> Result<()> {
     let desktop_applications_path = format!("/home/{}/.local/share/applications", get_user()?);
     let desktop_applications_path = std::path::Path::new(&desktop_applications_path);
 
@@ -49,10 +48,10 @@ pub fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
     let appimage_extracted_dir = appimage_dir.join("squashfs-root");
     let exec_path = appimage_extracted_dir.join("AppRun");
 
-    let mut entries = appimage_extracted_dir.read_dir()?;
+    let entries = appimage_extracted_dir.clone();
 
     let desktop_file = entries
-        .borrow_mut()
+        .read_dir()?
         .filter_map(|entry| {
             let path = entry.ok()?.path();
             if path.is_file() && path.extension().unwrap_or_default() == "desktop" {
@@ -66,7 +65,7 @@ pub fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
 
     let icon_extensions = ["svg", "png", "jpg", "jpeg", "bmp", "ico", "webp"];
     let mut icon = "None".to_string();
-    while let Some(entry) = entries.borrow_mut().next() {
+    for entry in entries.read_dir()? {
         let path = entry.as_ref().unwrap().path();
         if path.is_file() {
             let extension = path
@@ -85,12 +84,12 @@ pub fn integrate_appimage(file_path: &str, repo_name: &str) -> Result<()> {
         return Err(error!("No icon found"));
     }
 
-    let desktop_file_name = format!("{}.desktop", repo_name);
+    let desktop_file_name = format!("{}.desktop", name.to_lowercase());
     let desktop_app_path = PathBuf::from(desktop_applications_path).join(desktop_file_name);
 
     fs::copy(desktop_file, desktop_app_path)?;
 
-    let desktop_file_name = format!("{}.desktop", repo_name);
+    let desktop_file_name = format!("{}.desktop", name.to_lowercase());
     let desktop_app_path = PathBuf::from(desktop_applications_path).join(desktop_file_name);
 
     let mut desktop_file_content = std::fs::read_to_string(&desktop_app_path)?;

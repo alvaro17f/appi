@@ -7,7 +7,9 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use crate::utils::tools::get_user;
 
 pub async fn delete() -> Result<()> {
-    cprintln!("<g,s>APPI</> - <y>AppImage Installer</>\n");
+    cprintln!("<g,s>##################################");
+    cprintln!("<g,s>~> APPI</> - <y>AppImage Installer</>");
+    cprintln!("<g,s>##################################");
     let dir_path = format!("/home/{}/Applications", get_user()?);
     let dir_entries = fs::read_dir(&dir_path)?;
     let mut installed = HashMap::new();
@@ -24,7 +26,7 @@ pub async fn delete() -> Result<()> {
     }
 
     if installed.is_empty() {
-        cprintln!("<r>no appimages installed</>");
+        cprintln!("<r>No appimages installed</>");
         println!();
         return Ok(());
     }
@@ -46,7 +48,8 @@ pub async fn delete() -> Result<()> {
 
     let app_path = PathBuf::from(format!("/home/{}/.local/share/applications", get_user()?));
 
-    let matching_file = fs::read_dir(app_path)?
+    let matching_file = app_path
+        .read_dir()?
         .filter_map(|entry| {
             let path = entry.ok()?.path();
             if path.is_file()
