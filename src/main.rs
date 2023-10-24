@@ -48,7 +48,7 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    cprintln!("\n<r,s>❱❱</> <b,s>APPI</> <r,s>ᐅ</>\n");
+    cprintln!("\n<r,s>❱❱</> <b,s>APPI</> <r>ᐅ</>\n");
     let cli = Cli::parse();
     if let Some(generator) = cli.generator {
         let mut cmd = Cli::command();
