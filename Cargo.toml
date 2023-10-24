@@ -1,6 +1,6 @@
 [package]
 name = "appi"
-version = "0.7.8"
+version = "0.8.0"
 authors = ["alvaro17f"]
 description = "appi - appimage manager"
 repository = "https://github.com/alvaro17f/appi"
