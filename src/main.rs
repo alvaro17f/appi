@@ -1,11 +1,8 @@
 use anyhow::Result;
-use appi::modules::{
-    aur_download::aur_download, aur_search::aur_search, delete::delete,
-    github_download::github_download, github_search::github_search, list::list, update::update,
-};
-use appi::utils::{
-    completions::{print_completions, set_completions},
-    tools::clear,
+use appi::{
+    api::{aur::AUR, github::GITHUB},
+    modules::{delete::delete, list::list, update::update},
+    utils::{completions::Completions, tools::Tools},
 };
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
@@ -51,63 +48,58 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    Tools.clear()?;
+    cprintln!("<g,s>##################################");
+    cprintln!("<g,s>~> APPI</> - <y>AppImage Installer</>");
+    cprintln!("<g,s>##################################");
     let cli = Cli::parse();
     if let Some(generator) = cli.generator {
         let mut cmd = Cli::command();
         if generator == Shell::Zsh || generator == Shell::Bash {
-            set_completions(generator, &mut cmd);
+            Completions::set_completions(generator, &mut cmd);
             cprintln!("<c>{}</c> <y>completions are set", generator);
             exit(0)
         } else {
-            print_completions(generator, &mut cmd);
+            Completions::print_completions(generator, &mut cmd);
             exit(0)
         }
     }
     match &cli.commands {
         Some(Commands::Search { args, github }) => {
             if *github {
-                clear()?;
-                github_search(args.as_ref().unwrap()).await?;
+                GITHUB::search(args.as_ref().unwrap()).await?;
                 exit(0)
             } else if args.is_some() {
-                clear()?;
-                aur_search(args.as_ref().unwrap()).await?;
+                AUR::search(args.as_ref().unwrap()).await?;
                 exit(0)
             } else {
-                clear()?;
                 cprintln!("<r>Missing arguments</r>");
                 exit(1)
             }
         }
         Some(Commands::Install { args, github }) => {
             if *github {
-                clear()?;
-                github_download(args.as_ref().unwrap()).await?;
+                GITHUB::download(args.as_ref().unwrap()).await?;
                 exit(0)
             } else if args.is_some() {
-                clear()?;
                 let name = &args.as_ref().unwrap();
-                aur_download(name).await?;
+                AUR::download(name).await?;
                 exit(0)
             } else {
-                clear()?;
                 cprintln!("<r>Missing arguments</r>");
                 exit(1)
             }
         }
         Some(Commands::Update) => {
-            clear()?;
             update().await?;
         }
         Some(Commands::Delete) => {
-            clear()?;
             delete().await?;
         }
         None => {
-            clear()?;
             list().await?;
         }
     }
-
+    println!();
     Ok(())
 }

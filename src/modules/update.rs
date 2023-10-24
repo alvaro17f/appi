@@ -2,8 +2,7 @@
 
 use crate::{
     api::{aur::AUR, github::GITHUB},
-    modules::{aur_download::aur_download, github_download::github_download},
-    utils::tools::get_user,
+    utils::tools::Tools,
 };
 use anyhow::{Ok, Result};
 use color_print::{cformat, cprintln};
@@ -12,7 +11,7 @@ use semver::Version;
 use std::{fs, time::Duration};
 
 pub async fn update() -> Result<()> {
-    let base_path = format!("/home/{}/Applications", get_user()?);
+    let base_path = format!("/home/{}/Applications", Tools.get_user()?);
     let repo_entries = fs::read_dir(&base_path)?;
     for repo_entry in repo_entries {
         let repo_path = repo_entry?.path();
@@ -60,12 +59,12 @@ pub async fn update() -> Result<()> {
 
                 if creator.to_lowercase() == "aur" {
                     let name = &name.replace('_', "-");
-                    aur_download(name).await?;
+                    AUR::download(name).await?;
                 } else {
                     let name = &name.replace('_', "-");
                     let creator = &creator.replace('_', "-");
                     let url = &format!("{}/{}", &creator, &name);
-                    github_download(url).await?;
+                    GITHUB::download(url).await?;
                 }
             } else {
                 pb.finish_and_clear();

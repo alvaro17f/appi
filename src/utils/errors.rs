@@ -1,4 +1,11 @@
 #![allow(unused_macros, unused_imports)]
+
+macro_rules! error {
+    ($err:expr) => {
+        anyhow::anyhow!(color_print::cformat!("<r>{}</r>", $err))
+    };
+}
+
 macro_rules! error_detail {
     ($err:expr) => {
         anyhow::anyhow!(color_print::cformat!(
@@ -17,10 +24,5 @@ macro_rules! error_detail {
     };
 }
 
-macro_rules! error {
-    ($err:expr) => {
-        anyhow::anyhow!(color_print::cformat!("<r>{}</r>", $err))
-    };
-}
 pub(crate) use error;
 pub(crate) use error_detail;

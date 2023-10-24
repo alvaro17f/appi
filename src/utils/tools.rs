@@ -2,11 +2,15 @@ use anyhow::Result;
 use std::env;
 use std::process::Command;
 
-pub fn clear() -> Result<()> {
-    Command::new("clear");
-    Ok(())
-}
+pub struct Tools;
 
-pub fn get_user() -> Result<String> {
-    Ok(env::var("USER")?)
+impl Tools {
+    pub fn clear(&self) -> Result<()> {
+        Command::new("clear").status()?;
+        Ok(())
+    }
+
+    pub fn get_user(&self) -> Result<String> {
+        Ok(env::var("USER")?)
+    }
 }

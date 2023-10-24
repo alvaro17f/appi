@@ -1,4 +1,4 @@
-use crate::utils::{macros::error, tools::get_user};
+use crate::utils::{errors::error, tools::Tools};
 use anyhow::Result;
 use reqwest::Client;
 use std::{
@@ -42,7 +42,8 @@ impl AppImage {
         Ok(())
     }
     pub fn integrate(&self, file_path: &str, name: &str) -> Result<()> {
-        let desktop_applications_path = format!("/home/{}/.local/share/applications", get_user()?);
+        let desktop_applications_path =
+            format!("/home/{}/.local/share/applications", Tools.get_user()?);
         let desktop_applications_path = std::path::Path::new(&desktop_applications_path);
 
         let appimage_path = std::path::PathBuf::from(file_path);

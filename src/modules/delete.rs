@@ -1,14 +1,12 @@
-use crate::utils::{macros::error, tools::get_user};
+use crate::utils::errors::error;
+use crate::utils::tools::Tools;
 use anyhow::{Context, Result};
 use color_print::{cformat, cprintln};
 use dialoguer::{theme::ColorfulTheme, Select};
 use std::{collections::HashMap, fs, path::PathBuf};
 
 pub async fn delete() -> Result<()> {
-    cprintln!("<g,s>##################################");
-    cprintln!("<g,s>~> APPI</> - <y>AppImage Installer</>");
-    cprintln!("<g,s>##################################");
-    let dir_path = format!("/home/{}/Applications", get_user()?);
+    let dir_path = format!("/home/{}/Applications", Tools.get_user()?);
     let dir_entries = fs::read_dir(&dir_path)?;
     let mut installed = HashMap::new();
     for entry in dir_entries {
@@ -43,7 +41,10 @@ pub async fn delete() -> Result<()> {
 
     fs::remove_dir_all(app_folder)?;
 
-    let app_path = PathBuf::from(format!("/home/{}/.local/share/applications", get_user()?));
+    let app_path = PathBuf::from(format!(
+        "/home/{}/.local/share/applications",
+        Tools.get_user()?
+    ));
 
     let matching_file = app_path
         .read_dir()?
