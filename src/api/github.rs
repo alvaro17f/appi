@@ -7,7 +7,7 @@ use indicatif::ProgressBar;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{process::exit, time::Duration};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GITHUB {
@@ -68,27 +68,52 @@ impl GITHUB {
             .collect::<String>();
 
         let assets = response.assets.unwrap();
-        let asset = assets
+        let appimage_assets: Vec<_> = assets
             .iter()
-            .find(|a| {
+            .filter(|a| {
                 a.name
                     .as_ref()
-                    .map(|name| !name.to_lowercase().contains("arm64"))
-                    .unwrap_or(false)
-                    && a.name
-                        .as_ref()
-                        .unwrap()
-                        .to_lowercase()
-                        .ends_with(".appimage")
+                    .unwrap()
+                    .to_lowercase()
+                    .ends_with(".appimage")
             })
-            .context(error!("No AppImage found"))?;
-        let appimage_url = asset
-            .browser_download_url
-            .as_ref()
-            .context(error!("No URL to AppImage found"))?
-            .to_string();
+            .collect();
 
-        Ok((appimage_url, version))
+        if appimage_assets.is_empty() {
+            return Err(error!("No AppImage found"));
+        } else if appimage_assets.len() == 1 {
+            let asset = appimage_assets[0];
+            let appimage_url = asset
+                .browser_download_url
+                .as_ref()
+                .context(error!("No URL to AppImage found"))?
+                .to_string();
+            return Ok((appimage_url, version));
+        }
+
+        let items: Vec<&str> = appimage_assets
+            .iter()
+            .map(|a| a.name.as_ref().unwrap().as_str())
+            .collect();
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt(cformat!("<y>multiple appimages found, please select one:"))
+            .default(0)
+            .items(&items)
+            .interact()
+            .ok();
+
+        match selection {
+            Some(index) => {
+                let asset = appimage_assets[index];
+                let appimage_url = asset
+                    .browser_download_url
+                    .as_ref()
+                    .context(error!("No URL to AppImage found"))?
+                    .to_string();
+                Ok((appimage_url, version))
+            }
+            None => exit(0),
+        }
     }
 
     pub async fn get_latest_version(name: &str, creator: &str) -> Result<Version> {
@@ -149,10 +174,13 @@ impl GITHUB {
                 return Ok(false);
             }
         };
-        if assets
-            .iter()
-            .any(|a| a.name.as_ref().unwrap().ends_with(".AppImage"))
-        {
+        if assets.iter().any(|a| {
+            a.name
+                .as_ref()
+                .unwrap()
+                .to_lowercase()
+                .ends_with(".appimage")
+        }) {
             return Ok(true);
         }
 
@@ -220,7 +248,10 @@ impl GITHUB {
 
         let pb = ProgressBar::new_spinner();
         pb.enable_steady_tick(Duration::from_millis(120));
-        pb.set_message(cformat!("<y>Searching <c>{} <y>on <r>github<y>...", query));
+        pb.set_message(cformat!(
+            "<y>Searching</> <c,s>{}</> <y>on</> <m,s>github</><y>...</>",
+            query
+        ));
 
         let response = GITHUB::get(&search_url).await?;
 

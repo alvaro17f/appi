@@ -74,9 +74,7 @@ impl AUR {
         for element in document.select(&selector) {
             let a_link = element.value().attr("href").unwrap();
             let a_text = element.text().collect::<String>();
-            if !a_text.to_lowercase().contains("arm64")
-                && a_text.to_lowercase().ends_with(".appimage")
-            {
+            if a_text.to_lowercase().ends_with(".appimage") {
                 appimage_url = a_link.to_string();
             }
         }
