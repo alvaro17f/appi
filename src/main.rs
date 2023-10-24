@@ -2,7 +2,7 @@ use anyhow::Result;
 use appi::{
     api::{aur::AUR, github::GITHUB},
     modules::{delete::delete, list::list, update::update},
-    utils::{completions::Completions, tools::Tools},
+    utils::completions::Completions,
 };
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
@@ -48,10 +48,7 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    Tools.clear()?;
-    cprintln!("<g,s>##################################");
-    cprintln!("<g,s>~> APPI</> - <y>AppImage Installer</>");
-    cprintln!("<g,s>##################################");
+    cprintln!("\n<g,s>~> APPI</> - <y>AppImage Installer</>\n");
     let cli = Cli::parse();
     if let Some(generator) = cli.generator {
         let mut cmd = Cli::command();
