@@ -1,15 +1,15 @@
-use crate::utils::{
-    appimage_tools::{download_appimage, extract_appimage, integrate_appimage},
-    get_latest_version::get_latest_aur,
-    tools::get_user,
+use crate::{
+    api::aur::AUR,
+    utils::{appimage::AppImage, tools::get_user},
 };
 use anyhow::{Ok, Result};
 use color_print::{cformat, cprintln};
 use indicatif::ProgressBar;
 use std::time::Duration;
 
-pub async fn aur_download(appimage_url: &str, name: &str) -> Result<()> {
-    let version = get_latest_aur(name).await?;
+pub async fn aur_download(name: &str) -> Result<()> {
+    let appimage_url = AUR::get_appimage_url(name).await?;
+    let version = AUR::get_latest_version(name).await?;
     let name = name.replace('-', "_");
 
     let app_folder = format!("/home/{}/Applications/{}", get_user()?, name);
@@ -30,14 +30,14 @@ pub async fn aur_download(appimage_url: &str, name: &str) -> Result<()> {
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
     pb.set_message(cformat!("<c>Downloading {}...", name));
-    download_appimage(appimage_url, &file_path).await?;
+    AppImage.download(&appimage_url, &file_path).await?;
     pb.finish_and_clear();
 
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
     pb.set_message(cformat!("<c>Installing {}...", name));
-    extract_appimage(&file_path)?;
-    integrate_appimage(&file_path, &name)?;
+    AppImage.extract(&file_path)?;
+    AppImage.integrate(&file_path, &name)?;
     pb.finish_and_clear();
 
     cprintln!(

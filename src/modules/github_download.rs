@@ -1,42 +1,14 @@
-use crate::utils::{
-    appimage_tools::{download_appimage, extract_appimage, integrate_appimage},
-    macros::error,
-    rate_limit::check_github_rate_limit,
-    tools::get_user,
+use crate::{
+    api::github::GITHUB,
+    utils::{appimage::AppImage, macros::error, tools::get_user},
 };
 use anyhow::{Context, Ok, Result};
 use color_print::{cformat, cprintln};
 use indicatif::ProgressBar;
-use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
-use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Request {
-    url: Option<String>,
-    tag_name: Option<String>,
-    assets: Option<Vec<Assets>>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-struct Assets {
-    name: Option<String>,
-    browser_download_url: Option<String>,
-}
-
-impl Request {
-    async fn get(url: &str) -> Result<Self> {
-        let client = reqwest::Client::new();
-        let mut headers = HeaderMap::new();
-        headers.insert(USER_AGENT, HeaderValue::from_static("reqwest"));
-        let response = client.get(url).headers(headers).send().await?;
-        let response = response.json::<Request>().await?;
-        Ok(response)
-    }
-}
-
 async fn get_response(url: &str) -> Result<(String, String)> {
-    let response = Request::get(url).await?;
+    let response = GITHUB::get(url).await?;
 
     let version = response.tag_name.context(error!("No version found"))?;
     let version = version
@@ -69,7 +41,7 @@ async fn get_response(url: &str) -> Result<(String, String)> {
 }
 
 pub async fn github_download(repo_url: &str) -> Result<()> {
-    check_github_rate_limit().await?;
+    GITHUB::check_rate_limit().await?;
     let repo_url = repo_url.trim_end_matches('/');
     let repo_parts: Vec<&str> = repo_url.split('/').collect();
     let owner = repo_parts[repo_parts.len() - 2].to_string();
@@ -103,14 +75,14 @@ pub async fn github_download(repo_url: &str) -> Result<()> {
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
     pb.set_message(cformat!("<c>Downloading {}...", repo_name));
-    download_appimage(&appimage_url, &file_path).await?;
+    AppImage.download(&appimage_url, &file_path).await?;
     pb.finish_and_clear();
 
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
     pb.set_message(cformat!("<c>Installing {}...", repo_name));
-    extract_appimage(&file_path)?;
-    integrate_appimage(&file_path, &repo_name)?;
+    AppImage.extract(&file_path)?;
+    AppImage.integrate(&file_path, &repo_name)?;
     pb.finish_and_clear();
 
     cprintln!(

@@ -1,13 +1,9 @@
 #![allow(clippy::needless_late_init)]
 
 use crate::{
-    modules::{
-        aur_download::aur_download, aur_search::get_appimage_url, github_download::github_download,
-    },
-    utils::{
-        get_latest_version::{get_latest_aur, get_latest_github},
-        tools::get_user,
-    },
+    api::{aur::AUR, github::GITHUB},
+    modules::{aur_download::aur_download, github_download::github_download},
+    utils::tools::get_user,
 };
 use anyhow::{Ok, Result};
 use color_print::{cformat, cprintln};
@@ -50,10 +46,11 @@ pub async fn update() -> Result<()> {
             let appimage_version = Version::parse(version)?;
             let latest_version;
             if creator.to_lowercase() == "aur" {
-                latest_version = get_latest_aur(&name.replace('_', "-")).await?;
+                latest_version = AUR::get_latest_version(&name.replace('_', "-")).await?;
             } else {
                 latest_version =
-                    get_latest_github(&name.replace('_', "-"), &creator.replace('_', "-")).await?;
+                    GITHUB::get_latest_version(&name.replace('_', "-"), &creator.replace('_', "-"))
+                        .await?;
             };
 
             if appimage_version < latest_version {
@@ -63,8 +60,7 @@ pub async fn update() -> Result<()> {
 
                 if creator.to_lowercase() == "aur" {
                     let name = &name.replace('_', "-");
-                    let appimage_url = get_appimage_url(name).await?;
-                    aur_download(&appimage_url, name).await?;
+                    aur_download(name).await?;
                 } else {
                     let name = &name.replace('_', "-");
                     let creator = &creator.replace('_', "-");

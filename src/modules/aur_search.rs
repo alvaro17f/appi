@@ -1,4 +1,5 @@
 use crate::{
+    api::aur::AUR,
     modules::{aur_download::aur_download, github_search::github_search},
     utils::macros::error,
 };
@@ -6,81 +7,7 @@ use anyhow::Result;
 use color_print::{cformat, cprintln};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use indicatif::ProgressBar;
-use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
-use scraper::{Html, Selector};
-use serde::{Deserialize, Serialize};
 use std::{cmp::Ordering, process::exit, time::Duration};
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Request {
-    results: Option<Vec<Results>>,
-}
-
-#[allow(non_snake_case)]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-struct Results {
-    Name: Option<String>,
-    Popularity: Option<f32>,
-    Version: Option<String>,
-}
-
-impl Request {
-    async fn get(url: &str) -> Result<Self> {
-        let client = reqwest::Client::new();
-        let mut headers = HeaderMap::new();
-        headers.insert(USER_AGENT, HeaderValue::from_static("reqwest"));
-        let response = client.get(url).headers(headers).send().await?;
-        let response = response.json::<Request>().await?;
-        Ok(response)
-    }
-}
-
-pub async fn get_appimage_url(package_name: &str) -> Result<String> {
-    let body = reqwest::get(format!(
-        "https://aur.archlinux.org/packages/{}/",
-        package_name
-    ))
-    .await?
-    .text()
-    .await?;
-
-    let document = Html::parse_document(&body);
-
-    let selector = Selector::parse("a").unwrap();
-
-    let mut appimage_url: String = String::new();
-    for element in document.select(&selector) {
-        let a_link = element.value().attr("href").unwrap();
-        let a_text = element.text().collect::<String>();
-        if !a_text.to_lowercase().contains("arm64") && a_text.to_lowercase().ends_with(".appimage")
-        {
-            appimage_url = a_link.to_string();
-        }
-    }
-    Ok(appimage_url)
-}
-
-async fn check_appimage(package_name: &str) -> Result<bool> {
-    let body = reqwest::get(format!(
-        "https://aur.archlinux.org/packages/{}/",
-        package_name
-    ))
-    .await?
-    .text()
-    .await?;
-
-    let document = Html::parse_document(&body);
-
-    let selector = Selector::parse("a").unwrap();
-
-    for element in document.select(&selector) {
-        let a_text = element.text().collect::<String>();
-        if a_text.to_lowercase().ends_with(".appimage") {
-            return Ok(true);
-        }
-    }
-    Ok(false)
-}
 
 pub async fn aur_search(query: &str) -> Result<()> {
     let query = query.trim();
@@ -94,7 +21,7 @@ pub async fn aur_search(query: &str) -> Result<()> {
     pb.enable_steady_tick(Duration::from_millis(120));
     pb.set_message(cformat!("<y>Searching <c>{}<y>...", query));
 
-    let response = Request::get(&search_url).await?;
+    let response = AUR::get(&search_url).await?;
 
     #[allow(non_snake_case)]
     let _ = match response.results {
@@ -135,7 +62,7 @@ pub async fn aur_search(query: &str) -> Result<()> {
 
                 let mut selection_appimages: Vec<String> = Vec::new();
                 for selection in selections.iter() {
-                    if check_appimage(
+                    if AUR::check_appimage(
                         selection
                             .split(':')
                             .next()
@@ -182,8 +109,7 @@ pub async fn aur_search(query: &str) -> Result<()> {
                         .unwrap()
                         .trim();
 
-                    let appimage_url = get_appimage_url(name).await?;
-                    aur_download(&appimage_url, name).await?
+                    aur_download(name).await?
                 };
                 Ok(())
             }

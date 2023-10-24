@@ -1,6 +1,6 @@
 [package]
 name = "appi"
-version = "0.7.6"
+version = "0.7.7"
 authors = ["alvaro17f"]
 description = "appi - appimage manager"
 repository = "https://github.com/alvaro17f/appi"
@@ -19,7 +19,6 @@ color-print = "0.3.5"
 dialoguer = "0.11.0"
 indicatif = "0.17.6"
 openssl = { version = "0.10.40", features = ["vendored"] }
-regex = "1.10.2"
 reqwest = { version = "0.11", features = ["json"] }
 scraper = "0.17.1"
 semver = "1.0.20"

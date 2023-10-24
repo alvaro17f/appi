@@ -1,25 +1,15 @@
-mod modules;
-mod utils;
-
-use crate::{
-    modules::list::list,
-    utils::{
-        completions::{print_completions, set_completions},
-        tools::clear,
-    },
-};
 use anyhow::Result;
+use appi::modules::{
+    aur_download::aur_download, aur_search::aur_search, delete::delete,
+    github_download::github_download, github_search::github_search, list::list, update::update,
+};
+use appi::utils::{
+    completions::{print_completions, set_completions},
+    tools::clear,
+};
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use color_print::cprintln;
-use modules::{
-    aur_download::aur_download,
-    aur_search::{aur_search, get_appimage_url},
-    delete::delete,
-    github_download::github_download,
-    github_search::github_search,
-    update::update,
-};
 use std::process::exit;
 
 #[derive(Parser, Debug, PartialEq)]
@@ -75,29 +65,32 @@ async fn main() -> Result<()> {
     }
     match &cli.commands {
         Some(Commands::Search { args, github }) => {
-            clear()?;
             if *github {
+                clear()?;
                 github_search(args.as_ref().unwrap()).await?;
                 exit(0)
             } else if args.is_some() {
+                clear()?;
                 aur_search(args.as_ref().unwrap()).await?;
                 exit(0)
             } else {
+                clear()?;
                 cprintln!("<r>Missing arguments</r>");
                 exit(1)
             }
         }
         Some(Commands::Install { args, github }) => {
-            clear()?;
             if *github {
+                clear()?;
                 github_download(args.as_ref().unwrap()).await?;
                 exit(0)
             } else if args.is_some() {
+                clear()?;
                 let name = &args.as_ref().unwrap();
-                let appimage_url = get_appimage_url(name).await?;
-                aur_download(&appimage_url, name).await?;
+                aur_download(name).await?;
                 exit(0)
             } else {
+                clear()?;
                 cprintln!("<r>Missing arguments</r>");
                 exit(1)
             }
